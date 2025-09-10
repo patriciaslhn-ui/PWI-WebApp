@@ -60,6 +60,9 @@ export default function PurchasesPage() {
         {err && <p style={{ color:'#b00020' }}>{err}</p>}
 
         {tab === 'PO' && (
+          <div>
+            <h2>Purchase Orders</h2>
+            <br></br>
           <table className="table">
             <thead>
               <tr><th>ID</th><th>PO No</th><th>Supplier</th><th>Status</th><th>Open</th></tr>
@@ -89,9 +92,13 @@ export default function PurchasesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
 
         {tab === 'PR' && (
+          <div>
+            <h2>Purchase Requests</h2>
+            <br></br>
           <table className="table">
             <thead>
               <tr><th>ID</th><th>PR No</th><th>Requested By</th><th>Status</th><th>Open</th></tr>
@@ -123,6 +130,7 @@ export default function PurchasesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </RequireAuth>

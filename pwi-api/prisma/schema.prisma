@@ -77,10 +77,11 @@ model Item {
   safetyStock Decimal? @db.Decimal(14, 3)
   createdAt   DateTime @default(now())
 
-  bomProduct      Bom[]            @relation("BOMProduct")
-  bomComponent    Bom[]            @relation("BOMComponent")
-  stock           Stock[]
-  salesOrderItems SalesOrderItem[]
+  bomProduct        Bom[]               @relation("BOMProduct")
+  bomComponent      Bom[]               @relation("BOMComponent")
+  stock             Stock[]
+  salesOrderItems   SalesOrderItem[]
+  PurchaseOrderItem PurchaseOrderItem[]
 }
 
 model Bom {
@@ -231,12 +232,13 @@ model Supplier {
 }
 
 model PurchaseRequest {
-  id            Int      @id @default(autoincrement())
-  prNo          String   @unique
-  status        String   @default("CREATED")
-  requestedBy   User?    @relation(fields: [requestedById], references: [id])
+  id            Int             @id @default(autoincrement())
+  prNo          String          @unique
+  status        String          @default("CREATED")
+  requestedBy   User?           @relation(fields: [requestedById], references: [id])
   requestedById Int?
-  createdAt     DateTime @default(now())
+  createdAt     DateTime        @default(now())
+  PurchaseOrder PurchaseOrder[]
 }
 
 model PurchaseOrder {
@@ -246,4 +248,19 @@ model PurchaseOrder {
   supplier   Supplier @relation(fields: [supplierId], references: [id])
   supplierId Int
   createdAt  DateTime @default(now())
+
+  request   PurchaseRequest? @relation(fields: [requestId], references: [id])
+  requestId Int?
+
+  items PurchaseOrderItem[] // 👈 relation for PO line items
+}
+
+model PurchaseOrderItem {
+  id      Int           @id @default(autoincrement())
+  qty     Decimal
+  price   Decimal
+  order   PurchaseOrder @relation(fields: [orderId], references: [id])
+  orderId Int
+  item    Item          @relation(fields: [itemId], references: [id])
+  itemId  Int
 }

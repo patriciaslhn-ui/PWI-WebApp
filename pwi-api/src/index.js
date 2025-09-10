@@ -518,3 +518,181 @@ app.post('/api/purchase-requests', async (req, res) => {
     res.status(500).json({ error: 'Failed to create PR' });
   }
 });
+
+// Get one PO
+
+app.get('/api/purchase-orders/:id', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { supplier: true, items: { include: { item: true } } },
+    });
+    if (!po) return res.status(404).json({ error: 'PO not found' });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch PO' });
+  }
+});
+
+
+// Approve PO (Directors only)
+app.post('/api/purchase-orders/:id/approve', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'APPROVED' },
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to approve PO' });
+  }
+});
+
+// Reject PO
+app.post('/api/purchase-orders/:id/reject', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'REJECTED' },
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to reject PO' });
+  }
+});
+
+
+// Get one PR
+app.get('/api/purchase-requests/:id', async (req, res) => {
+  try {
+    const pr = await prisma.purchaseRequest.findUnique({
+      where: { id: Number(req.params.id) },
+      include: { requestedBy: true },
+    });
+    if (!pr) return res.status(404).json({ error: 'PR not found' });
+    res.json(pr);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch PR' });
+  }
+});
+
+// Validate (Manager)
+app.post('/api/purchase-requests/:id/validate', async (req, res) => {
+  try {
+    const pr = await prisma.purchaseRequest.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'VALIDATED' },
+    });
+    res.json(pr);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to validate PR' });
+  }
+});
+
+// Approve (Director)
+app.post('/api/purchase-requests/:id/approve', async (req, res) => {
+  try {
+    const pr = await prisma.purchaseRequest.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'APPROVED' },
+    });
+    res.json(pr);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to approve PR' });
+  }
+});
+
+// Reject (Director)
+app.post('/api/purchase-requests/:id/reject', async (req, res) => {
+  try {
+    const pr = await prisma.purchaseRequest.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'REJECTED' },
+    });
+    res.json(pr);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to reject PR' });
+  }
+});
+
+
+//Staff approves PR >> auto-create PO
+app.post('/api/purchase-requests/:id/approve', async (req, res) => {
+  try {
+    const prId = Number(req.params.id);
+
+    // Approve PR
+    const pr = await prisma.purchaseRequest.update({
+      where: { id: prId },
+      data: { status: 'APPROVED' },
+    });
+
+    // Create PO linked to PR
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        poNo: `PO-${Date.now()}`,
+        supplierId: req.body.supplierId, // staff must pick supplier
+        requestId: prId,
+        status: 'CREATED',
+      },
+    });
+
+    res.json({ pr, po });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to approve PR / create PO' });
+  }
+});
+
+
+//Staff validates PO >> Status = Waiting for Approval
+app.post('/api/purchase-orders/:id/validate', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'WAITING_FOR_APPROVAL' },
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to validate PO' });
+  }
+});
+
+
+// Director approves PO
+app.post('/api/purchase-orders/:id/approve', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'APPROVED' },
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to approve PO' });
+  }
+});
+
+
+// Director Rejects PO
+app.post('/api/purchase-orders/:id/reject', async (req, res) => {
+  try {
+    const po = await prisma.purchaseOrder.update({
+      where: { id: Number(req.params.id) },
+      data: { status: 'REJECTED' },
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to reject PO' });
+  }
+});
+
