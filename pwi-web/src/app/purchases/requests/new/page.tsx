@@ -86,9 +86,10 @@ export default function NewPurchaseRequestPage() {
           <button type="button" onClick={addLine}>+ Add Product</button>
           <br />
           <div>
-            <label>Notes</label>
+            <label>Notes</label><br></br>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
+          <br></br>
           <button type="submit">Submit Request</button>
         </form>
       </div>

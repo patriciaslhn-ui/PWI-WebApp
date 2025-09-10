@@ -1,9 +1,10 @@
 import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  const hashed = await bcrypt.hash('123456',10);
 
   // Clear tables in correct order (to avoid FK errors)
   await prisma.purchaseOrderItem.deleteMany();
@@ -20,13 +21,13 @@ async function main() {
 
   // Users
   const manufacturingStaff = await prisma.user.create({
-    data: {
+    data:{
       email: 'mfstaff@example.com',
       name: 'Manufacturing Staff',
       level: 'STAFF',
-      passwordHash: '123456', // replace with bcrypt hash later
-    },
-  });
+      passwordHash: hashed,
+    }
+  })
 
   const purchasingStaff = await prisma.user.create({
     data: {
