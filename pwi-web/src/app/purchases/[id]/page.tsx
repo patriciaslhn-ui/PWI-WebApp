@@ -1,4 +1,5 @@
 'use client';
+import { use } from 'react';
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
@@ -16,15 +17,16 @@ type PO = {
   items: POItem[];
 };
 
-export default function PurchaseOrderDetail({ params }: { params: { id: string } }) {
+export default function PurchaseOrderDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);            // ✅ unwrap the params Promise
+  const poId = Number(id);
   const { user } = useAuth();
   const [po, setPO] = useState<PO | null>(null);
   const [err, setErr] = useState('');
-  const id = Number(params.id);
 
   async function load() {
     try {
-      const data = await apiGet<PO>(`/api/purchase-orders/${id}`);
+      const data = await apiGet<PO>(`/api/purchase-orders/${poId}`);
       setPO(data);
     } catch (e: any) {
       setErr(e?.message || 'Failed to load PO');
@@ -32,43 +34,29 @@ export default function PurchaseOrderDetail({ params }: { params: { id: string }
   }
 
   async function validate() {
-    try {
-      await apiPost(`/api/purchase-orders/${id}/validate`, {});
-      await load();
-    } catch (e: any) {
-      alert(e?.message || 'Validate failed');
-    }
+    await apiPost(`/api/purchase-orders/${poId}/validate`, {});
+    await load();
   }
 
   async function approve() {
-    try {
-      await apiPost(`/api/purchase-orders/${id}/approve`, {});
-      await load();
-    } catch (e: any) {
-      alert(e?.message || 'Approval failed');
-    }
+    await apiPost(`/api/purchase-orders/${poId}/approve`, {});
+    await load();
   }
 
   async function reject() {
-    try {
-      await apiPost(`/api/purchase-orders/${id}/reject`, {});
-      await load();
-    } catch (e: any) {
-      alert(e?.message || 'Reject failed');
-    }
+    await apiPost(`/api/purchase-orders/${poId}/reject`, {});
+    await load();
   }
 
-  useEffect(() => { load(); }, [id]);
+  useEffect(() => { load(); }, [poId]);
 
   return (
     <RequireAuth>
       <div className="grid">
         <h1>Purchase Order #{po?.poNo}</h1>
         {err && <p style={{ color: '#b00020' }}>{err}</p>}
-        {!po ? (
-          <p>Loading…</p>
-        ) : (
-          <div>
+        {!po ? <p>Loading…</p> : (
+          <>
             <p><b>Status:</b> {po.status}</p>
             <p><b>Supplier:</b> {po.supplier?.name}</p>
             <p><b>Created:</b> {new Date(po.createdAt).toLocaleString()}</p>
@@ -102,7 +90,7 @@ export default function PurchaseOrderDetail({ params }: { params: { id: string }
                 <button onClick={reject}>Reject</button>
               </div>
             )}
-          </div>
+          </>
         )}
       </div>
     </RequireAuth>

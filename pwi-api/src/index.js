@@ -696,3 +696,50 @@ app.post('/api/purchase-orders/:id/reject', async (req, res) => {
   }
 });
 
+// Create PR
+app.post('/api/purchase-requests', async (req, res) => {
+  try {
+    const { prNo } = req.body;
+    const pr = await prisma.purchaseRequest.create({
+      data: { prNo, status: 'CREATED' },
+    });
+    res.json(pr);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to create PR' });
+  }
+});
+
+// Create PO with items
+app.post('/api/purchase-orders', async (req, res) => {
+  try {
+    const { poNo, supplierId, items } = req.body;
+    const po = await prisma.purchaseOrder.create({
+      data: {
+        poNo,
+        supplierId: Number(supplierId),
+        status: 'CREATED',
+        items: {
+          create: items.map((li) => ({
+            qty: li.qty,
+            price: li.price,
+            itemId: li.itemId,
+          })),
+        },
+      },
+      include: { items: true },
+    });
+    res.json(po);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to create PO' });
+  }
+});
+
+// Suppliers list
+app.get('/api/suppliers', async (req, res) => {
+  try {
+    const suppliers = await prisma.supplier.findMany();
+    res.json(suppliers);
+  } catch (e) {
+    res.status(500).json({ error: 'Failed to fetch suppliers' });
+  }
+});
