@@ -1,0 +1,221 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/**
+ * --- Enums ---
+ */
+enum ItemType {
+  FG
+  RM
+  PACKAGING
+}
+
+enum SalesOrderStatus {
+  CREATED
+  PENDING
+  PARTIALLY_SHIPPED
+  FULLY_SHIPPED
+  CANCELLED
+}
+
+enum SOApproval {
+  AUTO_APPROVED
+  WAITING_MANAGER
+  WAITING_DIRECTOR
+  APPROVED
+  REJECTED
+}
+
+enum Level {
+  STAFF
+  SUPERVISOR
+  MANAGER
+  DIRECTOR
+}
+
+/**
+ * --- Models ---
+ */
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  level        Level    @default(STAFF)
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Customer {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  address            String?
+  phone              String?
+  creditTermsDays    Int?     @default(0)
+  outstandingBalance Decimal  @default(0) @db.Decimal(14, 2)
+  createdAt          DateTime @default(now())
+
+  salesOrders SalesOrder[]
+}
+
+model Item {
+  id          Int      @id @default(autoincrement())
+  sku         String   @unique
+  name        String
+  type        ItemType
+  uom         String?
+  unitPrice   Decimal? @db.Decimal(14, 2)
+  safetyStock Decimal? @db.Decimal(14, 3)
+  createdAt   DateTime @default(now())
+
+  bomProduct      Bom[]            @relation("BOMProduct")
+  bomComponent    Bom[]            @relation("BOMComponent")
+  stock           Stock[]
+  salesOrderItems SalesOrderItem[]
+}
+
+model Bom {
+  id            Int     @id @default(autoincrement())
+  productId     Int
+  componentId   Int
+  qtyPerProduct Decimal @db.Decimal(14, 3)
+
+  product   Item @relation("BOMProduct", fields: [productId], references: [id])
+  component Item @relation("BOMComponent", fields: [componentId], references: [id])
+
+  @@index([productId])
+  @@index([componentId])
+}
+
+model Warehouse {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+
+  stock Stock[]
+}
+
+model Stock {
+  id          Int       @id @default(autoincrement())
+  itemId      Int
+  warehouseId Int
+  batchNo     String?
+  qtyOnHand   Decimal   @default(0) @db.Decimal(14, 3)
+  qtyReserved Decimal   @default(0) @db.Decimal(14, 3)
+  receivedAt  DateTime?
+  expiry      DateTime?
+  unitCost    Decimal?  @db.Decimal(14, 2)
+
+  item            Item              @relation(fields: [itemId], references: [id])
+  warehouse       Warehouse         @relation(fields: [warehouseId], references: [id])
+  SalesAllocation SalesAllocation[]
+  ShipmentItem    ShipmentItem[]
+
+  @@index([itemId])
+  @@index([warehouseId])
+  @@index([batchNo])
+  @@index([receivedAt])
+}
+
+model SalesOrder {
+  id         Int              @id @default(autoincrement())
+  soNo       String           @unique
+  customerId Int
+  status     SalesOrderStatus @default(CREATED)
+  createdAt  DateTime         @default(now())
+
+  approvalStatus     SOApproval @default(AUTO_APPROVED)
+  approvedManagerAt  DateTime?
+  approvedDirectorAt DateTime?
+
+  customer Customer         @relation(fields: [customerId], references: [id])
+  items    SalesOrderItem[]
+  Shipment Shipment[]
+
+  @@index([customerId])
+  @@index([approvalStatus])
+}
+
+model SalesOrderItem {
+  id           Int     @id @default(autoincrement())
+  salesOrderId Int
+  itemId       Int
+  qtyOrdered   Decimal @db.Decimal(14, 3)
+  qtyFulfilled Decimal @default(0) @db.Decimal(14, 3)
+  unitPrice    Decimal @db.Decimal(14, 2)
+
+  salesOrder   SalesOrder        @relation(fields: [salesOrderId], references: [id])
+  item         Item              @relation(fields: [itemId], references: [id])
+  allocations  SalesAllocation[]
+  ShipmentItem ShipmentItem[]
+
+  @@index([salesOrderId])
+  @@index([itemId])
+}
+
+model SalesAllocation {
+  id               Int      @id @default(autoincrement())
+  salesOrderItemId Int
+  stockId          Int
+  qty              Decimal  @db.Decimal(14, 3)
+  createdAt        DateTime @default(now())
+
+  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
+  stock          Stock          @relation(fields: [stockId], references: [id])
+
+  @@index([salesOrderItemId])
+  @@index([stockId])
+}
+
+model Shipment {
+  id          Int      @id @default(autoincrement())
+  soId        Int
+  warehouseId Int?
+  sjNo        String?  @unique
+  shippedAt   DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  salesOrder SalesOrder     @relation(fields: [soId], references: [id])
+  items      ShipmentItem[]
+
+  @@index([soId])
+}
+
+model ShipmentItem {
+  id               Int     @id @default(autoincrement())
+  shipmentId       Int
+  salesOrderItemId Int
+  stockId          Int
+  qty              Decimal @db.Decimal(14, 3)
+
+  shipment       Shipment       @relation(fields: [shipmentId], references: [id])
+  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
+  stock          Stock          @relation(fields: [stockId], references: [id])
+
+  @@index([shipmentId])
+  @@index([salesOrderItemId])
+  @@index([stockId])
+}
+
+model StockMovement {
+  id           Int      @id @default(autoincrement())
+  createdAt    DateTime @default(now())
+  itemId       Int
+  batchNo      String?
+  fromWhId     Int?
+  toWhId       Int?
+  qty          Decimal  @db.Decimal(14, 3)
+  movementType String // GR, Issue_to_MO, MO_Output, Sale_Shipment, Transfer, Adjustment
+  relatedDoc   String?
+
+  @@index([itemId])
+  @@index([batchNo])
+  @@index([createdAt])
+}
