@@ -3,11 +3,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
 
-
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, ready } = useAuth();
   const router = useRouter();
-
 
   useEffect(() => {
     if (ready && !user) {
@@ -15,10 +13,8 @@ export default function RequireAuth({ children }: { children: React.ReactNode })
     }
   }, [ready, user, router]);
 
-
-  if (!ready) return null; // wait for auth to initialize
+  if (!ready) return null; // wait until auth initializes
   if (!user) return null;  // will redirect
-
 
   return <>{children}</>;
 }

@@ -3,12 +3,10 @@ import './globals.css';
 import Providers from '@/components/Providers';
 import Sidebar from '@/components/Sidebar';
 
-
 export const metadata: Metadata = {
   title: 'PWI Web',
   description: 'Prioritas Wellness Indonesia Webapp',
 };
-
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
