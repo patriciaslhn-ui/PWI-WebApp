@@ -508,9 +508,23 @@ app.get('/api/purchase-requests', async (req, res) => {
 // Create PR
 app.post('/api/purchase-requests', async (req, res) => {
   try {
-    const { prNo, requestedById } = req.body;
+    const { orderingDate, deliveryDate, notes, items } = req.body;
     const pr = await prisma.purchaseRequest.create({
-      data: { prNo, requestedById: requestedById ? Number(requestedById) : null }
+      data: {
+        prNo: `PR-${Date.now()}`,
+        orderingDate: new Date(orderingDate),
+        deliveryDate: new Date(deliveryDate),
+        notes,
+        status: 'CREATED',
+        items: {
+          create: items.map(i => ({
+            productId: i.productId,
+            qty: i.qty,
+            uom: i.uom,
+          })),
+        },
+      },
+      include: { items: true },
     });
     res.json(pr);
   } catch (e) {
@@ -518,6 +532,7 @@ app.post('/api/purchase-requests', async (req, res) => {
     res.status(500).json({ error: 'Failed to create PR' });
   }
 });
+
 
 // Get one PO
 

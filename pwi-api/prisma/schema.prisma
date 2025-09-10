@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -42,19 +41,22 @@ enum Level {
 }
 
 /**
- * --- Models ---
+ * --- Users ---
  */
-
 model User {
-  id              Int               @id @default(autoincrement())
-  email           String            @unique
-  name            String?
-  level           Level             @default(STAFF)
-  passwordHash    String
-  createdAt       DateTime          @default(now())
-  PurchaseRequest PurchaseRequest[]
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  name         String?
+  level        Level    @default(STAFF)
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  purchaseRequests PurchaseRequest[]
 }
 
+/**
+ * --- Customers ---
+ */
 model Customer {
   id                 Int      @id @default(autoincrement())
   name               String
@@ -67,6 +69,9 @@ model Customer {
   salesOrders SalesOrder[]
 }
 
+/**
+ * --- Items ---
+ */
 model Item {
   id          Int      @id @default(autoincrement())
   sku         String   @unique
@@ -77,26 +82,15 @@ model Item {
   safetyStock Decimal? @db.Decimal(14, 3)
   createdAt   DateTime @default(now())
 
-  bomProduct        Bom[]               @relation("BOMProduct")
-  bomComponent      Bom[]               @relation("BOMComponent")
-  stock             Stock[]
-  salesOrderItems   SalesOrderItem[]
-  PurchaseOrderItem PurchaseOrderItem[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  purchaseRequestItems PurchaseRequestItem[]
+  salesOrderItems      SalesOrderItem[]
+  stock                Stock[]
 }
 
-model Bom {
-  id            Int     @id @default(autoincrement())
-  productId     Int
-  componentId   Int
-  qtyPerProduct Decimal @db.Decimal(14, 3)
-
-  product   Item @relation("BOMProduct", fields: [productId], references: [id])
-  component Item @relation("BOMComponent", fields: [componentId], references: [id])
-
-  @@index([productId])
-  @@index([componentId])
-}
-
+/**
+ * --- Warehouse & Stock ---
+ */
 model Warehouse {
   id   Int    @id @default(autoincrement())
   name String @unique
@@ -115,34 +109,23 @@ model Stock {
   expiry      DateTime?
   unitCost    Decimal?  @db.Decimal(14, 2)
 
-  item            Item              @relation(fields: [itemId], references: [id])
-  warehouse       Warehouse         @relation(fields: [warehouseId], references: [id])
-  SalesAllocation SalesAllocation[]
-  ShipmentItem    ShipmentItem[]
-
-  @@index([itemId])
-  @@index([warehouseId])
-  @@index([batchNo])
-  @@index([receivedAt])
+  item      Item      @relation(fields: [itemId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
 }
 
+/**
+ * --- Sales Orders ---
+ */
 model SalesOrder {
-  id         Int              @id @default(autoincrement())
-  soNo       String           @unique
-  customerId Int
-  status     SalesOrderStatus @default(CREATED)
-  createdAt  DateTime         @default(now())
-
-  approvalStatus     SOApproval @default(AUTO_APPROVED)
-  approvedManagerAt  DateTime?
-  approvedDirectorAt DateTime?
+  id             Int              @id @default(autoincrement())
+  soNo           String           @unique
+  customerId     Int
+  status         SalesOrderStatus @default(CREATED)
+  approvalStatus SOApproval       @default(AUTO_APPROVED)
+  createdAt      DateTime         @default(now())
 
   customer Customer         @relation(fields: [customerId], references: [id])
   items    SalesOrderItem[]
-  Shipment Shipment[]
-
-  @@index([customerId])
-  @@index([approvalStatus])
 }
 
 model SalesOrderItem {
@@ -153,75 +136,13 @@ model SalesOrderItem {
   qtyFulfilled Decimal @default(0) @db.Decimal(14, 3)
   unitPrice    Decimal @db.Decimal(14, 2)
 
-  salesOrder   SalesOrder        @relation(fields: [salesOrderId], references: [id])
-  item         Item              @relation(fields: [itemId], references: [id])
-  allocations  SalesAllocation[]
-  ShipmentItem ShipmentItem[]
-
-  @@index([salesOrderId])
-  @@index([itemId])
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id])
+  item       Item       @relation(fields: [itemId], references: [id])
 }
 
-model SalesAllocation {
-  id               Int      @id @default(autoincrement())
-  salesOrderItemId Int
-  stockId          Int
-  qty              Decimal  @db.Decimal(14, 3)
-  createdAt        DateTime @default(now())
-
-  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
-  stock          Stock          @relation(fields: [stockId], references: [id])
-
-  @@index([salesOrderItemId])
-  @@index([stockId])
-}
-
-model Shipment {
-  id          Int      @id @default(autoincrement())
-  soId        Int
-  warehouseId Int?
-  sjNo        String?  @unique
-  shippedAt   DateTime @default(now())
-  createdAt   DateTime @default(now())
-
-  salesOrder SalesOrder     @relation(fields: [soId], references: [id])
-  items      ShipmentItem[]
-
-  @@index([soId])
-}
-
-model ShipmentItem {
-  id               Int     @id @default(autoincrement())
-  shipmentId       Int
-  salesOrderItemId Int
-  stockId          Int
-  qty              Decimal @db.Decimal(14, 3)
-
-  shipment       Shipment       @relation(fields: [shipmentId], references: [id])
-  salesOrderItem SalesOrderItem @relation(fields: [salesOrderItemId], references: [id])
-  stock          Stock          @relation(fields: [stockId], references: [id])
-
-  @@index([shipmentId])
-  @@index([salesOrderItemId])
-  @@index([stockId])
-}
-
-model StockMovement {
-  id           Int      @id @default(autoincrement())
-  createdAt    DateTime @default(now())
-  itemId       Int
-  batchNo      String?
-  fromWhId     Int?
-  toWhId       Int?
-  qty          Decimal  @db.Decimal(14, 3)
-  movementType String // GR, Issue_to_MO, MO_Output, Sale_Shipment, Transfer, Adjustment
-  relatedDoc   String?
-
-  @@index([itemId])
-  @@index([batchNo])
-  @@index([createdAt])
-}
-
+/**
+ * --- Suppliers ---
+ */
 model Supplier {
   id      Int             @id @default(autoincrement())
   name    String
@@ -231,36 +152,63 @@ model Supplier {
   orders  PurchaseOrder[]
 }
 
+/**
+ * --- Purchase Requests ---
+ */
 model PurchaseRequest {
-  id            Int             @id @default(autoincrement())
-  prNo          String          @unique
-  status        String          @default("CREATED")
-  requestedBy   User?           @relation(fields: [requestedById], references: [id])
+  id            Int                   @id @default(autoincrement())
+  prNo          String                @unique
+  orderingDate  DateTime
+  deliveryDate  DateTime
+  notes         String?
+  status        String                @default("CREATED")
+  requestedBy   User?                 @relation(fields: [requestedById], references: [id])
   requestedById Int?
-  createdAt     DateTime        @default(now())
-  PurchaseOrder PurchaseOrder[]
+  createdAt     DateTime              @default(now())
+  items         PurchaseRequestItem[]
+
+  purchaseOrder PurchaseOrder? @relation("PR_PO")
 }
 
-model PurchaseOrder {
+model PurchaseRequestItem {
   id         Int      @id @default(autoincrement())
-  poNo       String   @unique
-  status     String   @default("CREATED")
-  supplier   Supplier @relation(fields: [supplierId], references: [id])
-  supplierId Int
-  createdAt  DateTime @default(now())
+  productId  Int
+  qty        Decimal  @db.Decimal(14, 3)
+  uom        String
+  qtyOrdered Decimal? @db.Decimal(14, 3)
 
-  request   PurchaseRequest? @relation(fields: [requestId], references: [id])
-  requestId Int?
+  product   Item            @relation(fields: [productId], references: [id])
+  request   PurchaseRequest @relation(fields: [requestId], references: [id])
+  requestId Int
+}
 
-  items PurchaseOrderItem[] // 👈 relation for PO line items
+/**
+ * --- Purchase Orders ---
+ */
+model PurchaseOrder {
+  id           Int      @id @default(autoincrement())
+  poNo         String   @unique
+  orderingDate DateTime
+  deliveryDate DateTime
+  notes        String?
+  status       String   @default("CREATED")
+  supplierId   Int?
+  createdAt    DateTime @default(now())
+
+  supplier  Supplier?           @relation(fields: [supplierId], references: [id])
+  request   PurchaseRequest?    @relation("PR_PO", fields: [requestId], references: [id])
+  requestId Int?                @unique
+  items     PurchaseOrderItem[]
 }
 
 model PurchaseOrderItem {
-  id      Int           @id @default(autoincrement())
-  qty     Decimal
-  price   Decimal
+  id        Int      @id @default(autoincrement())
+  productId Int
+  qty       Decimal  @db.Decimal(14, 3)
+  price     Decimal? @db.Decimal(14, 2)
+  uom       String
+
+  product Item          @relation(fields: [productId], references: [id])
   order   PurchaseOrder @relation(fields: [orderId], references: [id])
   orderId Int
-  item    Item          @relation(fields: [itemId], references: [id])
-  itemId  Int
 }
