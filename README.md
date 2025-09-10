@@ -10,3 +10,7 @@
 <li>Invoices</li>
 <li>Expenses</li>
 
+<h3>Purchases</h3>
+List of Purchase Orders & Purchase Requests.
+
+
