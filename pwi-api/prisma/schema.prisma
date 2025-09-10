@@ -46,12 +46,13 @@ enum Level {
  */
 
 model User {
-  id           Int      @id @default(autoincrement())
-  email        String   @unique
-  name         String?
-  level        Level    @default(STAFF)
-  passwordHash String
-  createdAt    DateTime @default(now())
+  id              Int               @id @default(autoincrement())
+  email           String            @unique
+  name            String?
+  level           Level             @default(STAFF)
+  passwordHash    String
+  createdAt       DateTime          @default(now())
+  PurchaseRequest PurchaseRequest[]
 }
 
 model Customer {
@@ -218,4 +219,31 @@ model StockMovement {
   @@index([itemId])
   @@index([batchNo])
   @@index([createdAt])
+}
+
+model Supplier {
+  id      Int             @id @default(autoincrement())
+  name    String
+  address String?
+  phone   String?
+  email   String?
+  orders  PurchaseOrder[]
+}
+
+model PurchaseRequest {
+  id            Int      @id @default(autoincrement())
+  prNo          String   @unique
+  status        String   @default("CREATED")
+  requestedBy   User?    @relation(fields: [requestedById], references: [id])
+  requestedById Int?
+  createdAt     DateTime @default(now())
+}
+
+model PurchaseOrder {
+  id         Int      @id @default(autoincrement())
+  poNo       String   @unique
+  status     String   @default("CREATED")
+  supplier   Supplier @relation(fields: [supplierId], references: [id])
+  supplierId Int
+  createdAt  DateTime @default(now())
 }

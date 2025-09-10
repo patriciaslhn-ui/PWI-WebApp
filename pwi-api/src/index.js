@@ -71,6 +71,7 @@ app.get('/', (_req, res) => {
       <li><a href="/api/warehouses">/api/warehouses</a></li>
       <li><a href="/api/sales-orders">/api/sales-orders</a></li>
       <li><a href="/api/shipments">/api/shipments</a></li>
+      <li><a href="/api/purchase-orders">/api/purchase-orders</a></li>
     </ul>
   `);
 });
@@ -464,4 +465,56 @@ app.get('/api/shipments/:id', requireAuth, async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 PWI API listening on http://localhost:${PORT}`);
+});
+
+// Purchases
+
+// List POs
+app.get('/api/purchase-orders', async (req, res) => {
+  try {
+    const pos = await prisma.purchaseOrder.findMany({ include: { supplier: true } });
+    res.json(pos);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch purchase orders' });
+  }
+});
+
+// Create PO
+app.post('/api/purchase-orders', async (req, res) => {
+  try {
+    const { poNo, supplierId } = req.body;
+    const po = await prisma.purchaseOrder.create({
+      data: { poNo, supplierId: Number(supplierId) }
+    });
+    res.json(po);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to create PO' });
+  }
+});
+
+// List PRs
+app.get('/api/purchase-requests', async (req, res) => {
+  try {
+    const prs = await prisma.purchaseRequest.findMany({ include: { requestedBy: true } });
+    res.json(prs);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to fetch PRs' });
+  }
+});
+
+// Create PR
+app.post('/api/purchase-requests', async (req, res) => {
+  try {
+    const { prNo, requestedById } = req.body;
+    const pr = await prisma.purchaseRequest.create({
+      data: { prNo, requestedById: requestedById ? Number(requestedById) : null }
+    });
+    res.json(pr);
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: 'Failed to create PR' });
+  }
 });
