@@ -3,10 +3,9 @@ import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
 
-type Item = { id: number; sku: string; name: string };
+type Item = { id: number; sku: string; name: string; uom: string };
 
 export default function NewPurchaseRequestPage() {
-  const [orderingDate, setOrderingDate] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [items, setItems] = useState<Item[]>([]);
@@ -21,10 +20,22 @@ export default function NewPurchaseRequestPage() {
     setLines([...lines, { productId: 0, qty: 1, uom: '' }]);
   }
 
+  function removeLine(idx: number) {
+    setLines(lines.filter((_, i) => i !== idx));
+  }
+
+  function handleProductChange(idx: number, productId: number) {
+    const item = items.find(i => i.id === productId);
+    const copy = [...lines];
+    copy[idx].productId = productId;
+    copy[idx].uom = item?.uom || '';   // 👈 auto fill UoM
+    setLines(copy);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     await apiPost('/api/purchase-requests', {
-      orderingDate,
+      orderingDate: new Date().toISOString(), // 👈 auto today
       deliveryDate,
       notes,
       items: lines,
@@ -40,24 +51,20 @@ export default function NewPurchaseRequestPage() {
         <h1>New Purchase Request</h1>
         <form onSubmit={submit} className="form">
           <div>
-            <label>Ordering Date </label>
-            <input type="date" value={orderingDate} onChange={e => setOrderingDate(e.target.value)} />
+            <label>Delivery Date</label>
+            <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
           </div>
           <div>
-            <label>Delivery Date </label>
-            <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
+            <label>Notes</label>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
 
           <h3>Products Requested</h3>
           {lines.map((line, idx) => (
-            <div key={idx} style={{ display: 'flex', gap: 8 }}>
+            <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <select
                 value={line.productId}
-                onChange={e => {
-                  const copy = [...lines];
-                  copy[idx].productId = Number(e.target.value);
-                  setLines(copy);
-                }}
+                onChange={e => handleProductChange(idx, Number(e.target.value))}
               >
                 <option value={0}>— Select Product —</option>
                 {items.map(i => <option key={i.id} value={i.id}>{i.sku} - {i.name}</option>)}
@@ -75,24 +82,17 @@ export default function NewPurchaseRequestPage() {
               <input
                 placeholder="Unit of Measure"
                 value={line.uom}
-                onChange={e => {
-                  const copy = [...lines];
-                  copy[idx].uom = e.target.value;
-                  setLines(copy);
-                }}
+                disabled   // 👈 readonly (auto-filled)
               />
+              <button type="button" onClick={() => removeLine(idx)}>❌ Delete</button>
             </div>
           ))}
           <button type="button" onClick={addLine}>+ Add Product</button>
           <br />
-          <div>
-            <label>Notes</label><br></br>
-            <textarea value={notes} onChange={e => setNotes(e.target.value)} />
-          </div>
-          <br></br>
           <button type="submit">Submit Request</button>
         </form>
       </div>
     </RequireAuth>
   );
 }
+

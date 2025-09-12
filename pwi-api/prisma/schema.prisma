@@ -40,9 +40,20 @@ enum Level {
   DIRECTOR
 }
 
+enum Division {
+  MANUFACTURING
+  PURCHASING
+  SALES
+  FINANCE
+  LOGISTICS
+  WAREHOUSE_RM
+  WAREHOUSE_FG
+}
+
 /**
  * --- Users ---
  */
+ 
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -52,6 +63,17 @@ model User {
   createdAt    DateTime @default(now())
 
   purchaseRequests PurchaseRequest[]
+  divisions        UserDivision[]
+}
+
+model UserDivision {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  division Division
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, division])
 }
 
 /**

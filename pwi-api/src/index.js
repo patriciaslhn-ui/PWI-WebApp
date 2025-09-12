@@ -82,21 +82,39 @@ app.get('/debug/db', async (_req, res) => {
 });
 
 /* ---------------- Auth ---------------- */
-app.post('/auth/login', async (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) return res.status(400).json({ error: 'email and password required' });
+app.post('/api/login', async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { divisions: true },
+    });
+
     if (!user) return res.status(401).json({ error: 'Invalid credentials' });
-    const ok = await bcrypt.compare(password, user.passwordHash);
-    if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
+
+    const match = await bcrypt.compare(password, user.passwordHash);
+    if (!match) return res.status(401).json({ error: 'Invalid credentials' });
+
     const token = signUser(user);
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name, level: user.level } });
+
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        level: user.level,
+        divisions: user.divisions.map((d) => d.division),
+      },
+    });
   } catch (e) {
-    console.error(e.stack || e);
-    res.status(500).json({ error: 'Login failed' });
+    console.error('Login error:', e);
+    res.status(500).json({ error: 'Server error during login' });
   }
 });
+
+
 
 /* ---------------- Customers ---------------- */
 app.get('/api/customers', async (_req, res) => {
@@ -506,32 +524,44 @@ app.get('/api/purchase-requests', async (req, res) => {
 });
 
 // Create PR
-app.post('/api/purchase-requests', async (req, res) => {
+app.post('/api/purchase-requests', requireAuth, async (req, res) => {
   try {
-    const { orderingDate, deliveryDate, notes, items } = req.body;
+    const userId = req.user.sub;
+
+    const divisions = await prisma.userDivision.findMany({ where: { userId } });
+    const allowed = divisions.some(
+      (d) => d.division === 'MANUFACTURING' || d.division === 'PURCHASING'
+    );
+    if (!allowed) return res.status(403).json({ error: 'Not allowed to create PRs' });
+
+    const { deliveryDate, notes, items } = req.body;
+
     const pr = await prisma.purchaseRequest.create({
       data: {
         prNo: `PR-${Date.now()}`,
-        orderingDate: new Date(orderingDate),
+        orderingDate: new Date(),
         deliveryDate: new Date(deliveryDate),
         notes,
+        requestedById: userId,
         status: 'CREATED',
         items: {
-          create: items.map(i => ({
+          create: items.map((i) => ({
             productId: i.productId,
             qty: i.qty,
             uom: i.uom,
           })),
         },
       },
-      include: { items: true },
+      include: { items: { include: { product: true } }, requestedBy: true },
     });
+
     res.json(pr);
   } catch (e) {
     console.error(e);
     res.status(500).json({ error: 'Failed to create PR' });
   }
 });
+
 
 
 // Get one PO
@@ -585,7 +615,7 @@ app.get('/api/purchase-requests/:id', async (req, res) => {
   try {
     const pr = await prisma.purchaseRequest.findUnique({
       where: { id: Number(req.params.id) },
-      include: { requestedBy: true },
+      include: { items: { include: { product: true } } },
     });
     if (!pr) return res.status(404).json({ error: 'PR not found' });
     res.json(pr);
@@ -594,6 +624,7 @@ app.get('/api/purchase-requests/:id', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch PR' });
   }
 });
+
 
 // Validate (Manager)
 app.post('/api/purchase-requests/:id/validate', async (req, res) => {
@@ -724,30 +755,36 @@ app.post('/api/purchase-requests', async (req, res) => {
   }
 });
 
-// Create PO with items
-app.post('/api/purchase-orders', async (req, res) => {
+// Create PO with items & Auth
+app.post('/api/purchase-orders', requireAuth, async (req, res) => {
   try {
-    const { poNo, supplierId, items } = req.body;
+    const { poNo, supplierId, items, requestId } = req.body;
+
     const po = await prisma.purchaseOrder.create({
       data: {
         poNo,
-        supplierId: Number(supplierId),
+        supplierId: supplierId ? Number(supplierId) : null,
+        requestId: requestId || null,
         status: 'CREATED',
         items: {
           create: items.map((li) => ({
+            productId: li.productId,
             qty: li.qty,
             price: li.price,
-            itemId: li.itemId,
+            uom: li.uom,
           })),
         },
       },
-      include: { items: true },
+      include: { items: { include: { product: true } }, supplier: true },
     });
+
     res.json(po);
   } catch (e) {
+    console.error(e);
     res.status(500).json({ error: 'Failed to create PO' });
   }
 });
+
 
 // Suppliers list
 app.get('/api/suppliers', async (req, res) => {
@@ -758,3 +795,7 @@ app.get('/api/suppliers', async (req, res) => {
     res.status(500).json({ error: 'Failed to fetch suppliers' });
   }
 });
+
+
+
+
