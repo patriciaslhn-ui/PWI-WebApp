@@ -15,6 +15,7 @@ type PR = {
   deliveryDate: string;
   notes?: string;
   items: PRItem[];
+  requestedBy: { id: number; name: string };
 };
 
 export default function PurchaseRequestDetail({ params }: { params: Promise<{ id: string }> }) {
