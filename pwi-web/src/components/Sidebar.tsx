@@ -1,38 +1,53 @@
 'use client';
-import { useAuth } from '@/lib/auth-context';
-
-const NavLink = ({ href, children }: { href: string; children: React.ReactNode }) => (
-  <a href={href} style={{ padding:'8px 10px', borderRadius:8, display:'block' }}>{children}</a>
-);
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Sidebar() {
-  const { user, ready, logout } = useAuth();
+  const pathname = usePathname();
+
+  const menu = [
+    { label: 'Sales', href: '/sales' },
+    { label: 'Purchases', href: '/purchases' },
+    { label: 'Expenses', href: '/expenses' },
+    { label: 'Invoices', href: '/invoices' },
+    { label: 'Manufacturing', href: '/manufacturing' },
+    { label: 'Approval Matrix', href: '/approvals' },
+    { label: 'Deliveries', href: '/deliveries' },
+    { label: 'Items', href: '/items' },
+    { label: 'Customers', href: '/customers' },
+    { label: 'Employees', href: '/employees' },
+    { label: 'Settings', href: '/settings' },
+  ];
 
   return (
-    <aside style={{ padding: 16, borderRight: '1px solid #eee', background: '#fafafa' }}>
-      <h2 style={{ marginTop: 0 }}>PWI</h2>
-      <div style={{ fontSize:12, color:'#444', marginBottom:8, minHeight:40 }}>
-        {!ready ? '...' : (user
-          ? <>Signed in as <b>{user.name || user.email}</b><div>Level: {user.level}</div></>
-          : 'Not signed in')}
-      </div>
-      {user ? <button onClick={logout} style={{ marginBottom:12 }}>Logout</button> : <a href="/login"><button>Login</button></a>}
-
-      <nav>
-        <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 6 }}>
-          <li><NavLink href="/">Dashboard</NavLink></li>
-          <li><NavLink href="/purchases">Purchases</NavLink></li>
-          <li><NavLink href="/sales">Sales</NavLink></li>
-          <li><NavLink href="/manufacturing">Manufacturing</NavLink></li>
-          <li><NavLink href="/deliveries">Deliveries</NavLink></li>
-          <li><NavLink href="/invoices">Invoices</NavLink></li>
-          <li><NavLink href="/expenses">Expenses</NavLink></li>
-          <li><NavLink href="/items">Items</NavLink></li>
-          <li><NavLink href="/approvals">Approval Matrix</NavLink></li>
-          <li><NavLink href="/settings">Settings</NavLink></li>
-        </ul>
-      </nav>
+    <aside
+      style={{
+        width: 220,
+        background: '#fafafa',
+        borderRight: '1px solid #ddd',
+        padding: '24px 16px',
+        minHeight: '100vh',
+      }}
+    >
+      <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+        {menu.map((m) => (
+          <li key={m.href} style={{ marginBottom: 20 }}>
+            <Link
+              href={m.href}
+              style={{
+                textDecoration: 'none',
+                fontSize: '18px', // bigger font
+                color: pathname.startsWith(m.href) ? '#1976d2' : '#000', // active blue, otherwise black
+                fontWeight: pathname.startsWith(m.href) ? 'bold' : 'normal',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
+              {m.label}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </aside>
   );
 }
-

@@ -1,25 +1,24 @@
-import type { Metadata } from 'next';
 import './globals.css';
-import Providers from '@/components/Providers';
+import { AuthProvider } from '@/lib/auth-context';
 import Sidebar from '@/components/Sidebar';
-
-export const metadata: Metadata = {
-  title: 'PWI Web',
-  description: 'Prioritas Wellness Indonesia Webapp',
-};
+import Topbar from '@/components/Topbar';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif' }}>
-        <Providers>
-          <div style={{ display: 'grid', gridTemplateColumns: '240px 1fr', minHeight: '100vh' }}>
-            <Sidebar />
-            <main style={{ padding: 24 }}>{children}</main>
+      <body style={{ margin: 0 }}>
+        <AuthProvider>
+          <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+            <Topbar />
+            <div style={{ display: 'flex', flex: 1 }}>
+              <Sidebar />
+              <main style={{ flex: 1, overflow: 'auto', padding: 16 }}>
+                {children}
+              </main>
+            </div>
           </div>
-        </Providers>
+        </AuthProvider>
       </body>
     </html>
   );
 }
-

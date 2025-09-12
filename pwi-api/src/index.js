@@ -796,6 +796,49 @@ app.get('/api/suppliers', async (req, res) => {
   }
 });
 
+// ------- Users ------ //
+// List users (ADMIN only)
+app.get('/api/users', requireAuth, async (req, res) => {
+  if (req.user.level !== 'DIRECTOR') return res.status(403).json({ error: 'Forbidden' });
+  const users = await prisma.user.findMany({ include: { divisions: true } });
+  res.json(users.map(u => ({ ...u, divisions: u.divisions.map(d => d.division) })));
+});
+
+// Set user level
+app.post('/api/users/:id/set-level', requireAuth, async (req, res) => {
+  if (req.user.level !== 'DIRECTOR') return res.status(403).json({ error: 'Forbidden' });
+  const updated = await prisma.user.update({
+    where: { id: +req.params.id },
+    data: { level: req.body.level }
+  });
+  res.json(updated);
+});
+
+// Set user divisions
+app.post('/api/users/:id/set-divisions', requireAuth, async (req, res) => {
+  if (req.user.level !== 'DIRECTOR') return res.status(403).json({ error: 'Forbidden' });
+  const { divisions } = req.body;
+  await prisma.userDivision.deleteMany({ where: { userId: +req.params.id } });
+  await prisma.userDivision.createMany({
+    data: divisions.map(d => ({ userId: +req.params.id, division: d })),
+  });
+  res.json({ ok: true });
+});
+
+// User updates own preferences
+app.post('/api/users/:id/preferences', requireAuth, async (req, res) => {
+  if (req.user.sub !== +req.params.id) return res.status(403).json({ error: 'Forbidden' });
+  const { name, password } = req.body;
+  const data = {};
+  if (name) data.name = name;
+  if (password) {
+    const hashed = await bcrypt.hash(password, 10);
+    data.passwordHash = hashed;
+  }
+  const updated = await prisma.user.update({ where: { id: +req.params.id }, data });
+  res.json({ ok: true, user: { id: updated.id, name: updated.name } });
+});
+
 
 
 
