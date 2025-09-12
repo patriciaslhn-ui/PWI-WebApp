@@ -1,52 +1,64 @@
 'use client';
-import { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { login as apiLogin } from './api';
 
+type User = {
+  id: number;
+  email: string;
+  name: string;
+  level: string;
+  divisions: string[];
+};
 
-export type User = { id:number; email:string; name?:string|null; level:'STAFF'|'SUPERVISOR'|'MANAGER'|'DIRECTOR' };
-
-
-type AuthCtx = {
+type AuthContextType = {
   user: User | null;
-  ready: boolean;                 // ✅ auth state initialized
-  setUser: (u: User | null) => void;
+  token: string | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 };
 
+const AuthContext = createContext<AuthContextType | null>(null);
 
-const Ctx = createContext<AuthCtx>({
-  user: null,
-  ready: false,
-  setUser: () => {},
-  logout: () => {},
-});
-
-
-export function AuthProvider({ children }:{ children: React.ReactNode }) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [ready, setReady] = useState(false);
-
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('pwi_user');
-      if (raw) setUser(JSON.parse(raw));
-    } finally {
-      setReady(true); // ✅ only true after we've checked localStorage
+    const t = localStorage.getItem('token');
+    const u = localStorage.getItem('user');
+    if (t && u) {
+      setToken(t);
+      setUser(JSON.parse(u));
     }
+    setLoading(false); // ✅ done checking localStorage
   }, []);
 
-
-  function logout() {
-    localStorage.removeItem('pwi_user');
-    localStorage.removeItem('pwi_token');
-    setUser(null);
-    if (typeof window !== 'undefined') window.location.href = '/login';
+  async function login(email: string, password: string) {
+    const res = await apiLogin(email, password);
+    setUser(res.user);
+    setToken(res.token);
+    localStorage.setItem('token', res.token);
+    localStorage.setItem('user', JSON.stringify(res.user));
   }
 
+  function logout() {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
 
-  return <Ctx.Provider value={{ user, ready, setUser, logout }}>{children}</Ctx.Provider>;
+  return (
+    <AuthContext.Provider value={{ user, token, loading, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
-
-export function useAuth() { return useContext(Ctx); }
-
+export function useAuth() {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
+}

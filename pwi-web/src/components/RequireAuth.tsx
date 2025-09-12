@@ -1,21 +1,23 @@
 'use client';
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
+import { useEffect } from 'react';
 
 export default function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, ready } = useAuth();
-  const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (ready && !user) {
-      router.replace('/login');
+    if (!loading && !user) {
+      window.location.href = '/login';
     }
-  }, [ready, user, router]);
+  }, [loading, user]);
 
-  if (!ready) return null; // wait until auth initializes
-  if (!user) return null;  // will redirect
+  if (loading) {
+    return <p>Loading session…</p>; // ⏳ wait for localStorage check
+  }
+
+  if (!user) {
+    return <p>Redirecting to login…</p>;
+  }
 
   return <>{children}</>;
 }
-
