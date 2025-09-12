@@ -20,11 +20,11 @@ export default function LoginPage() {
 
   return (
     <div style={{ maxWidth: 400, margin: '40px auto' }}>
-      <h1>Login</h1>
+      <h1>Login</h1><br></br>
       {error && <p style={{ color: 'red' }}>{error}</p>}
       <form onSubmit={handleSubmit} className="form">
         <div>
-          <label>Email</label>
+          <label><b>Email</b></label><p></p>
           <input
             type="email"
             value={email}
@@ -33,7 +33,7 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label>Password</label>
+          <label><b>Password</b></label><p></p>
           <input
             type="password"
             value={password}
@@ -41,7 +41,9 @@ export default function LoginPage() {
             required
           />
         </div>
+        <br></br>
         <button type="submit">Log in</button>
+        <a href=""><h4>Forgot Password?</h4></a>
       </form>
     </div>
   );
