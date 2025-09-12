@@ -29,6 +29,7 @@ export default function Sidebar() {
           <li><NavLink href="/expenses">Expenses</NavLink></li>
           <li><NavLink href="/items">Items</NavLink></li>
           <li><NavLink href="/approvals">Approval Matrix</NavLink></li>
+          <li><NavLink href="/settings">Settings</NavLink></li>
         </ul>
       </nav>
     </aside>
