@@ -28,9 +28,13 @@ export default function LoginPage() {
   return (
     <div style={{ maxWidth: 400, margin: '40px auto' }}>
       <h1>Login</h1>
+      <br></br>
       <form onSubmit={handleSubmit} className="form">
-        <div><label>Email</label><input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
-        <div><label>Password</label><input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+        <div><label><b>Email</b></label><p>
+          </p><input type="email" value={email} onChange={e => setEmail(e.target.value)} /></div>
+        <div><label><b>Password</b></label><p>
+          </p><input type="password" value={password} onChange={e => setPassword(e.target.value)} /></div>
+        <br></br>
         <button type="submit">Login</button>
       </form>
       {err && <p style={{ color: '#b00020' }}>{err}</p>}

@@ -34,7 +34,7 @@ async function main() {
       email: 'purchasing@example.com',
       name: 'Purchasing Staff',
       level: 'SUPERVISOR',
-      passwordHash: hashed,
+      passwordHash: 'password',
       divisions: { create: [{ division: 'PURCHASING' }] },
     },
   });
