@@ -1,111 +1,101 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
+import {useRouter} from "next/navigation";
 
+type Item = { id: number; sku: string; name: string; uom: string };
 
-type SO = {
-  id: number;
-  soNo: string;
-  status: 'CREATED' | 'PENDING' | 'PARTIALLY_SHIPPED' | 'FULLY_SHIPPED' | 'CANCELLED';
-  approvalStatus: 'AUTO_APPROVED' | 'WAITING_MANAGER' | 'WAITING_DIRECTOR' | 'APPROVED' | 'REJECTED';
-  customer: { id: number; name: string };
-  items: { id: number }[];
-};
-
-
-export default function SalesListPage() {
-  const [list, setList] = useState<SO[]>([]);
-  const [filter, setFilter] = useState({ approvalStatus: '', status: '' });
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState('');
-
+export default function NewSalesPage() {
+  const [deliveryDate, setDeliveryDate] = useState('');
+  const [notes, setNotes] = useState('');
+  const [items, setItems] = useState<Item[]>([]);
+  const [lines, setLines] = useState<{ productId: number; qty: number; uom: string }[]>([]);
+  const [done, setDone] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    (async () => {
-      setLoading(true); setErr('');
-      try {
-        const qs = new URLSearchParams();
-        if (filter.approvalStatus) qs.set('approvalStatus', filter.approvalStatus);
-        if (filter.status) qs.set('status', filter.status);
-        const data = await apiGet<SO[]>(`/api/sales-orders${qs.size ? `?${qs.toString()}` : ''}`);
-        setList(data);
-      } catch (e: any) {
-        setErr(e?.message || 'Failed to load Sales Orders');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [filter.approvalStatus, filter.status]);
+    apiGet<Item[]>('/api/items').then(setItems).catch(() => setItems([]));
+  }, []);
 
+  function addLine() {
+    setLines([...lines, { productId: 0, qty: 1, uom: '' }]);
+  }
+
+  function removeLine(idx: number) {
+    setLines(lines.filter((_, i) => i !== idx));
+  }
+
+  function handleProductChange(idx: number, productId: number) {
+    const item = items.find(i => i.id === productId);
+    const copy = [...lines];
+    copy[idx].productId = productId;
+    copy[idx].uom = item?.uom || '';   // 👈 auto fill UoM
+    setLines(copy);
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    await apiPost('/api/sales', {
+      createdAt: new Date().toISOString(), // 👈 auto today
+      deliveryDate,
+      notes,
+      items: lines,
+    });
+    setDone(true);
+  }
+
+  if (done) return <p>✅ Sales Order submitted</p>;
 
   return (
     <RequireAuth>
       <div className="grid">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1>Sales Orders</h1>
-          <a href="/sales/new"><button>+ New SO</button></a>
-        </div>
-
-
-        <div className="card" style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+        <h1>New Sales Order</h1>
+        <form onSubmit={submit} className="form">
           <div>
-            <label>Approval</label><br />
-            <select value={filter.approvalStatus} onChange={e => setFilter({ ...filter, approvalStatus: e.target.value })}>
-              <option value="">All</option>
-              <option value="AUTO_APPROVED">Auto approved</option>
-              <option value="WAITING_MANAGER">Waiting Manager</option>
-              <option value="WAITING_DIRECTOR">Waiting Director</option>
-              <option value="APPROVED">Approved</option>
-              <option value="REJECTED">Rejected</option>
-            </select>
+            <label>Delivery Date</label>
+            <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} />
           </div>
+
+          <h3>Products</h3>
+          {lines.map((line, idx) => (
+            <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <select
+                value={line.productId}
+                onChange={e => handleProductChange(idx, Number(e.target.value))}
+              >
+                <option value={0}>— Select Product —</option>
+                {items.map(i => <option key={i.id} value={i.id}>{i.sku} - {i.name}</option>)}
+              </select>
+              <input
+                type="number"
+                placeholder="Quantity"
+                value={line.qty}
+                onChange={e => {
+                  const copy = [...lines];
+                  copy[idx].qty = Number(e.target.value);
+                  setLines(copy);
+                }}
+              />
+              <input
+                placeholder="Unit of Measure"
+                value={line.uom}
+                disabled   // 👈 readonly (auto-filled)
+              />
+              <button type="button" onClick={() => removeLine(idx)}>❌ Delete</button>
+            </div>
+
+            
+          ))}
+          
+          <button type="button" onClick={addLine}>+ Add Product</button>
+          <br />
           <div>
-            <label>Status</label><br />
-            <select value={filter.status} onChange={e => setFilter({ ...filter, status: e.target.value })}>
-              <option value="">All</option>
-              <option value="CREATED">Created</option>
-              <option value="PENDING">Pending</option>
-              <option value="PARTIALLY_SHIPPED">Partially Shipped</option>
-              <option value="FULLY_SHIPPED">Fully Shipped</option>
-              <option value="CANCELLED">Cancelled</option>
-            </select>
+            <label>Notes</label><p></p>
+            <textarea value={notes} onChange={e => setNotes(e.target.value)} />
           </div>
-          <button onClick={() => setFilter({ approvalStatus: '', status: '' })}>Clear</button>
-        </div>
-
-
-        {loading && <p>Loading…</p>}
-        {err && <p style={{ color: '#b00020' }}>{err}</p>}
-
-
-        <table className="table">
-          <thead>
-            <tr><th>ID</th><th>SO No</th><th>Customer</th><th>Items</th><th>Approval</th><th>Status</th><th>Open</th></tr>
-          </thead>
-          <tbody>
-            {list.map(so => (
-              <tr key={so.id}>
-                <td>{so.id}</td>
-                <td>{so.soNo}</td>
-                <td>{so.customer?.name}</td>
-                <td>{so.items?.length || 0}</td>
-                <td>
-                  <span style={{
-                    padding: '2px 8px', borderRadius: 999,
-                    background: so.approvalStatus === 'APPROVED' || so.approvalStatus === 'AUTO_APPROVED' ? '#e8f5e9' : '#fff3e0',
-                    color: so.approvalStatus === 'APPROVED' || so.approvalStatus === 'AUTO_APPROVED' ? '#2e7d32' : '#ef6c00',
-                    fontWeight: 600
-                  }}>
-                    {so.approvalStatus}
-                  </span>
-                </td>
-                <td>{so.status}</td>
-                <td><a href={`/sales/${so.id}`}><button>Open</button></a></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          <button type="submit">Submit Order</button>
+        </form>
       </div>
     </RequireAuth>
   );
