@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
+import RequireAuth from '@/components/RequireAuth';
 
 type Customer = {
   id: number;
@@ -17,6 +18,7 @@ function rupiah(x?: string) {
 }
 
 export default function CustomersPage() {
+  
   const [list, setList] = useState<Customer[]>([]);
 
   async function load() {
@@ -26,6 +28,7 @@ export default function CustomersPage() {
   useEffect(() => { load(); }, []);
 
   return (
+    <RequireAuth>
     <div className="grid">
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
         <h1>Customers</h1>
@@ -65,5 +68,7 @@ export default function CustomersPage() {
         Note: If Outstanding &gt; 0, new Sales Orders will require Manager and Director approvals.
       </p>
     </div>
+    </RequireAuth>
   );
+
 }

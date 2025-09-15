@@ -24,27 +24,23 @@ export default function LoginPage() {
       {/* Top bar */}
       <header
         style={{
-          background: '#e5e5e5',
+          background: '#f5f5f5',
           padding: '10px 20px',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
         }}
       >
-        <div><b>PWI LOGO</b></div>
-        <nav>
-          <Link href="/login" style={{ margin: '0 12px' }}>SIGN IN</Link>
-          <Link href="/contact" style={{ margin: '0 12px' }}>CONTACT US</Link>
-        </nav>
       </header>
 
-      {/* Login form centered */}
+      {/* Centered login card */}
       <div
         style={{
           flex: 1,
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
+          background: '#f5f5f5',
         }}
       >
         <div
@@ -67,7 +63,13 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                style={{ width: '100%', padding: 8, marginTop: 4 }}
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  marginTop: 4,
+                  border: '1px solid #ccc',
+                  borderRadius: 4,
+                }}
               />
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -77,28 +79,41 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
-                style={{ width: '100%', padding: 8, marginTop: 4 }}
+                style={{
+                  width: '100%',
+                  padding: 10,
+                  marginTop: 4,
+                  border: '1px solid #ccc',
+                  borderRadius: 4,
+                }}
               />
             </div>
             <button
               type="submit"
               style={{
                 width: '100%',
-                padding: '10px',
+                padding: '12px',
                 background: '#dbe9f4',
                 border: '1px solid #ccc',
                 borderRadius: 4,
                 cursor: 'pointer',
                 fontWeight: 'bold',
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
             >
               LOG IN
             </button>
           </form>
           <p style={{ marginTop: 12, textAlign: 'center' }}>
-            <a href="/forgot-password" style={{ color: '#333', textDecoration: 'none' }}>
+            <Link
+              href="/forgot-password"
+              style={{ color: '#000', textDecoration: 'none' }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
+            >
               Forgot Password?
-            </a>
+            </Link>
           </p>
         </div>
       </div>

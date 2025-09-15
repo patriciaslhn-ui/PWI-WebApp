@@ -16,9 +16,9 @@ const sectionConfig: Record<string, NavGroup[]> = {
       children: [
         { label: 'Purchase Requests', href: '/purchases/requests' },
         { label: 'Purchase Orders', href: '/purchases/orders' },
-        { label: 'Suppliers', href: '/purchases/suppliers' },
-        { label: 'Products', href: '/purchases/products' },
-        { label: 'Product Variants', href: '/purchases/variants' },
+        { label: 'Suppliers', href: '/suppliers' },
+        { label: 'Products', href: '/items' },
+        { label: 'Product Variants', href: '/items/variants' },
       ],
     },
     {
@@ -41,7 +41,10 @@ const sectionConfig: Record<string, NavGroup[]> = {
         { label: 'Claim Sales Program', href: '/sales/claims' },
       ],
     },
-    { label: 'Returns', children: [{ label: 'Return Orders', href: '/sales/returns' }] },
+    {
+      label: 'Returns',
+      children: [{ label: 'Return Orders', href: '/sales/returns' }],
+    },
     {
       label: 'Consignment',
       children: [
@@ -50,7 +53,10 @@ const sectionConfig: Record<string, NavGroup[]> = {
         { label: 'Return Consignment', href: '/sales/consignments/return' },
       ],
     },
-    { label: 'Invoicing', children: [{ label: 'Orders to Invoice', href: '/sales/invoicing' }] },
+    {
+      label: 'Invoicing',
+      children: [{ label: 'Orders to Invoice', href: '/sales/invoicing' }],
+    },
     {
       label: 'Catalog',
       children: [
@@ -71,7 +77,71 @@ const sectionConfig: Record<string, NavGroup[]> = {
       ],
     },
   ],
-  // ... same structure for expenses, deliveries, manufacturing, settings
+  expenses: [
+    {
+      label: 'My Expenses',
+      children: [
+        { label: 'Expenses to Submit', href: '/expenses/submit' },
+        { label: 'Refused Reports', href: '/expenses/refused' },
+        { label: 'Expenses Report', href: '/expenses/report' },
+      ],
+    },
+    {
+      label: 'Reporting',
+      children: [
+        { label: 'Expenses Analysis', href: '/expenses/analysis' },
+        { label: 'Expenses Report Analysis', href: '/expenses/report-analysis' },
+      ],
+    },
+    {
+      label: 'To Approve',
+      children: [{ label: 'Expenses to Approve', href: '/expenses/approve' }],
+    },
+  ],
+  deliveries: [
+    {
+      label: 'Deliveries',
+      children: [{ label: 'Delivery Orders', href: '/deliveries/orders' }],
+    },
+    {
+      label: 'Reporting',
+      children: [{ label: 'Deliveries Report', href: '/deliveries/report' }],
+    },
+    {
+      label: 'Master Data',
+      children: [
+        { label: 'Products', href: '/deliveries/products' },
+        { label: 'Customers', href: '/deliveries/customers' },
+        { label: 'Logistics', href: '/deliveries/logistics' },
+        { label: 'Stock', href: '/deliveries/stock' },
+      ],
+    },
+  ],
+  manufacturing: [
+    {
+      label: 'Operations',
+      children: [{ label: 'Operations', href: '/manufacturing' }],
+    },
+    {
+      label: 'Master Data',
+      children: [{ label: 'Master Data', href: '/manufacturing/master' }],
+    },
+    {
+      label: 'Reporting',
+      children: [{ label: 'Reporting', href: '/manufacturing/report' }],
+    },
+  ],
+  approvals: [],
+  settings: [
+    {
+      label: 'Settings',
+      children: [
+        { label: 'Accounts', href: '/settings/accounts' },
+        { label: 'Management', href: '/settings/management' },
+        { label: 'Preferences', href: '/settings/preferences' },
+      ],
+    },
+  ],
 };
 
 export default function Topbar() {
@@ -80,8 +150,6 @@ export default function Topbar() {
 
   const segment = pathname.split('/')[1] || '';
   const groups = sectionConfig[segment] || [];
-
-  // Which top-level tab is open
   const [activeGroup, setActiveGroup] = useState<string | null>(groups[0]?.label || null);
 
   return (
@@ -144,8 +212,9 @@ export default function Topbar() {
                 textDecoration: 'none',
                 color: pathname === c.href ? '#1976d2' : '#000',
                 fontWeight: pathname === c.href ? 'bold' : 'normal',
-                
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.textDecoration = 'underline')}
+              onMouseLeave={(e) => (e.currentTarget.style.textDecoration = 'none')}
             >
               {c.label}
             </Link>

@@ -3,20 +3,20 @@ import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
 
-type PurchaseOrder = {
+type PurchaseRequest = {
   id: number;
-  poNo: string;
+  prNo: string;
   status: string;
   orderingDate: string;
   deliveryDate: string;
 };
 
-export default function PurchaseOrdersPage() {
-  const [data, setData] = useState<PurchaseOrder[]>([]);
+export default function PurchaseRequestsPage() {
+  const [data, setData] = useState<PurchaseRequest[]>([]);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    apiGet<PurchaseOrder[]>('/api/purchase-orders')
+    apiGet<PurchaseRequest[]>('/api/purchase-requests')
       .then(setData)
       .catch((e) => setError(e.message));
   }, []);
@@ -24,7 +24,7 @@ export default function PurchaseOrdersPage() {
   return (
     <RequireAuth>
       <div style={{ padding: 20 }}>
-        <h1>Purchase Orders</h1>
+        <h1>Purchase Requests</h1>
         <br></br>
 
         {error && <p style={{ color: 'red' }}>{error}</p>}
@@ -32,20 +32,20 @@ export default function PurchaseOrdersPage() {
           <thead>
             <tr>
               <th style={{textAlign:'left', padding: '8px'}}>ID</th>
-              <th style={{textAlign:'left', padding: '8px'}}>No</th>
+              <th style={{textAlign:'left', padding: '8px'}}>PR No</th>
               <th style={{textAlign:'left', padding: '8px'}}>Ordering Date</th>
               <th style={{textAlign:'left', padding: '8px'}}>Delivery Date</th>
               <th style={{textAlign:'left', padding: '8px'}}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {data.map((po) => (
-              <tr key={po.id}>
-                <td>{po.id}</td>
-                <td>{po.poNo}</td>
-                <td>{new Date(po.orderingDate).toLocaleDateString()}</td>
-                <td>{new Date(po.deliveryDate).toLocaleDateString()}</td>
-                <td>{po.status}</td>
+            {data.map((pr) => (
+              <tr key={pr.id}>
+                <td style={{textAlign:'left', padding: '8px'}}>{pr.id}</td>
+                <td style={{textAlign:'left', padding: '8px'}}>{pr.prNo}</td>
+                <td style={{textAlign:'left', padding: '8px'}}>{new Date(pr.orderingDate).toLocaleDateString()}</td>
+                <td style={{textAlign:'left', padding: '8px'}}>{new Date(pr.deliveryDate).toLocaleDateString()}</td>
+                <td style={{textAlign:'left', padding: '8px'}}>{pr.status}</td>
               </tr>
             ))}
           </tbody>

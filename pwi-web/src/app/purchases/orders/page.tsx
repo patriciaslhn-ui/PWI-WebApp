@@ -31,11 +31,7 @@ export default function PurchaseOrdersPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr>
-              <th style={{textAlign:'left', padding: '8px'}}>ID</th>
-              <th style={{textAlign:'left', padding: '8px'}}>No</th>
-              <th style={{textAlign:'left', padding: '8px'}}>Ordering Date</th>
-              <th style={{textAlign:'left', padding: '8px'}}>Delivery Date</th>
-              <th style={{textAlign:'left', padding: '8px'}}>Status</th>
+              <th>ID</th><th>No</th><th>Ordering Date</th><th>Delivery Date</th><th>Status</th>
             </tr>
           </thead>
           <tbody>
