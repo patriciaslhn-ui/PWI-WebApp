@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet, apiPost } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
+import {useRouter} from "next/navigation";
 
 type Item = { id: number; sku: string; name: string; uom: string };
 
@@ -11,6 +12,7 @@ export default function NewPurchaseRequestPage() {
   const [items, setItems] = useState<Item[]>([]);
   const [lines, setLines] = useState<{ productId: number; qty: number; uom: string }[]>([]);
   const [done, setDone] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     apiGet<Item[]>('/api/items').then(setItems).catch(() => setItems([]));

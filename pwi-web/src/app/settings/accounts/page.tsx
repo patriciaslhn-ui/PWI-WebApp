@@ -33,19 +33,24 @@ export default function UserAccountsPage() {
     <RequireAuth>
       <div style={{ padding: 20 }}>
         <h1>User Accounts</h1>
+        <br></br>
         {error && <p style={{ color: 'red' }}>{error}</p>}
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <table className='table' style={{ width: '100%', borderCollapse: 'collapse', textAlign:'left', padding: '8px', lineHeight: '1.5'}}>
           <thead>
             <tr>
-              <th>ID</th><th>Email</th><th>Name</th><th>Level</th><th>Divisions</th>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Level</th>
+              <th>Divisions</th>
             </tr>
           </thead>
           <tbody>
             {users.map((u) => (
               <tr key={u.id}>
                 <td>{u.id}</td>
-                <td>{u.email}</td>
                 <td>{u.name}</td>
+                <td>{u.email}</td>
                 <td>{u.level}</td>
                 <td>{u.divisions.join(', ')}</td>
               </tr>

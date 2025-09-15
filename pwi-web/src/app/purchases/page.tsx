@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { apiGet } from '@/lib/api';
 import RequireAuth from '@/components/RequireAuth';
+import {useRouter} from "next/navigation";
 
 type PurchaseOrder = {
   id: number;
@@ -14,6 +15,7 @@ type PurchaseOrder = {
 export default function PurchaseOrdersPage() {
   const [data, setData] = useState<PurchaseOrder[]>([]);
   const [error, setError] = useState('');
+  const router = useRouter();
 
   useEffect(() => {
     apiGet<PurchaseOrder[]>('/api/purchase-orders')
@@ -21,10 +23,13 @@ export default function PurchaseOrdersPage() {
       .catch((e) => setError(e.message));
   }, []);
 
+  
+
   return (
     <RequireAuth>
       <div style={{ padding: 20 }}>
         <h1>Purchase Orders</h1>
+        
         <br></br>
 
         {error && <p style={{ color: 'red' }}>{error}</p>}

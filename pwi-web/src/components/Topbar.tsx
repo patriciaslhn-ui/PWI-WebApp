@@ -110,8 +110,8 @@ const sectionConfig: Record<string, NavGroup[]> = {
     {
       label: 'Master Data',
       children: [
-        { label: 'Products', href: '/deliveries/products' },
-        { label: 'Customers', href: '/deliveries/customers' },
+        { label: 'Products', href: '/items' },
+        { label: 'Customers', href: '/customers' },
         { label: 'Logistics', href: '/deliveries/logistics' },
         { label: 'Stock', href: '/deliveries/stock' },
       ],
